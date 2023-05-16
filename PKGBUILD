@@ -35,8 +35,12 @@ prepare() {
 	_pkgver=$(printf "${_release}\n" | jq -r '.tag_name' | sed 's/^v//')
 	_release_url=$(printf "${_release}\n" | jq -r '.assets[] | select(.name | match("^qlik-Linux")).browser_download_url')
 	_checksum_url=$(printf "${_release}\n" | jq -r '.assets[] | select(.name | match("checksums")).browser_download_url')
-	curl -L "${_release_url}" -o "${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz"
-	curl -sL ${_checksum_url} | sed -n "s/${pkgname/-cli/}-Linux-${arch}.tar.gz/${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz/p" | sha256sum -c
+	_src_file="${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz"
+	if [ ! -f "${_src_file}" ]
+	then
+		curl -L "${_release_url}" -o "${_src_file}"
+		curl -sL ${_checksum_url} | sed -n "s/${pkgname/-cli/}-Linux-${arch}.tar.gz/${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz/p" | sha256sum -c
+	fi
 	tar -xzf "${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz"
 }
 
@@ -50,3 +54,4 @@ package() {
 	install -Dm644 "${srcdir}/bash" "${pkgdir}/usr/share/bash-completion/completions/qlik"
 	install -Dm644 "${srcdir}/zsh" "${pkgdir}/usr/share/zsh/site-functions/_qlik"
 }
+
