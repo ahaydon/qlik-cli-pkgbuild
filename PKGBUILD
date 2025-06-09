@@ -1,6 +1,6 @@
 # Maintainer: Adam Haydon <adam.haydon@qlik.com>
 pkgname=qlik-cli
-pkgver=2.19.0
+pkgver=2.27.0
 pkgrel=1
 pkgdesc="Tool for Qlik Sense SaaS which provides access to all public APIs through the command line."
 arch=('x86_64')
@@ -27,12 +27,18 @@ sha256sums=()
 validpgpkeys=()
 
 pkgver() {
-	./qlik version | sed -r -n 's/version: ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'
+	_pkgver=$(./qlik version | sed -r -n 's/version: ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p')
+	if [ -z ${_pkgver} ]
+	then
+		_pkgver=$(<./_version)
+	fi
+	printf ${pkgver}
 }
 
 prepare() {
 	_release=$(curl https://api.github.com/repos/qlik-oss/${pkgname}/releases/latest -s)
 	_pkgver=$(printf "${_release}\n" | jq -r '.tag_name' | sed 's/^v//')
+	printf "${_pkgver}" > _version
 	_release_url=$(printf "${_release}\n" | jq -r '.assets[] | select(.name | match("^qlik-Linux")).browser_download_url')
 	_checksum_url=$(printf "${_release}\n" | jq -r '.assets[] | select(.name | match("checksums")).browser_download_url')
 	_src_file="${pkgname/-cli/}-Linux-${_pkgver}-${arch}.tar.gz"
